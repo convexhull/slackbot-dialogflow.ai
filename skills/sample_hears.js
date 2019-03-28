@@ -10,8 +10,18 @@ respond immediately with a single line response.
 */
 
 var wordfilter = require('wordfilter');
+// var { dialogflowMiddleware } = require('../dialogflow-middleware/dialogflow');
+
+
+var options = {
+    projectId: process.env.dialogflow,
+};
+var dialogflowMiddleware = require('botkit-middleware-dialogflow-v2')(options);
+
+
 
 module.exports = function(controller) {
+    controller.middleware.receive.use(dialogflowMiddleware.receive);
 
     /* Collect some very simple runtime stats for use in the uptime/debug command */
     var stats = {
@@ -29,7 +39,6 @@ module.exports = function(controller) {
 
 
     controller.hears(['^uptime','^debug'], 'direct_message,direct_mention', function(bot, message) {
-
         bot.createConversation(message, function(err, convo) {
             if (!err) {
                 convo.setVar('uptime', formatUptime(process.uptime()));
@@ -43,7 +52,9 @@ module.exports = function(controller) {
 
     });
 
-    controller.hears(['^say (.*)','^say'], 'direct_message,direct_mention', function(bot, message) {
+    controller.hears(['^say (.*)','^say','default welcome intent', 'default fallback intent'], 'direct_message,direct_mention',  function(bot, message) {
+        console.log(message);
+
         if (message.match[1]) {
 
             if (!wordfilter.blacklisted(message.match[1])) {
